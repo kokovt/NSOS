@@ -1,0 +1,6 @@
+build*/
+kernel8.img
+.cache/
+cc/build*/
+cc/gcc*
+cc/bin*

@@ -1,0 +1,14 @@
+# Target system settings
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+
+# Compiler settings (Searches in the system PATH)
+set(CMAKE_C_COMPILER aarch64-elf-gcc)
+set(CMAKE_ASM_COMPILER aarch64-elf-gcc)
+
+# Target environment settings
+set(CMAKE_FIND_ROOTH_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
