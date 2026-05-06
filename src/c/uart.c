@@ -10,25 +10,18 @@ void uart_send(char c) {
     return;
   }
 
-  while (1) {
-    if (!(get32(get_UART0_FR()) & (1 << 5))) {
-      break;
-    }
-    put32(get_UART0_DR(), c);
+  while (get32(get_UART0_FR()) & (1 << 5)) {
   }
+  put32(get_UART0_DR(), c);
 }
 char uart_recv() {
   if (!uart_initialized) {
     return 0;
   }
 
-  while (1) {
-    if (!(get32(get_UART0_FR()) & (1 << 4))) {
-      return 0;
-      break;
-    }
-    return (get32(get_UART0_DR()) & 0xFF);
+  while (get32(get_UART0_FR()) & (1 << 4)) {
   }
+  return (get32(get_UART0_DR()) & 0xFF);
 }
 
 int uart_send_string(char *str) {
