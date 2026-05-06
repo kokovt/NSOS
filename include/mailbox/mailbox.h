@@ -46,7 +46,7 @@ enum {
 };
 
 
-void mailbox_write(unsigned long buffer_addr, uint32_t channel, uint32_t PBASE);
-uint32_t mailbox_read(uint32_t channel, uint32_t PBASE);
+void mailbox_write(unsigned long buffer_addr, uint32_t channel);
+uint32_t mailbox_read(uint32_t channel);
 
 #endif /* _MAILBOX_H */

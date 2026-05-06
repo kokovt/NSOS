@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>8×8 font grid</title>
+  <style>
+    :root {
+      --cell: 56px;
+      --ink: #1a1a2e;
+      --paper: #f4f4f8;
+      --accent: #4361ee;
+      --border: #c8cad4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 1.25rem;
+      background: #e8e9ef;
+      color: #222;
+      line-height: 1.45;
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    .sub { font-size: 0.875rem; color: #555; margin-bottom: 1rem; }
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    button.tool {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+    }
+    button.tool:hover { background: #f0f1f5; }
+    button.tool:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(8, var(--cell));
+      grid-template-rows: repeat(8, var(--cell));
+      gap: 0;
+      width: calc(8 * var(--cell));
+      user-select: none;
+      touch-action: none;
+    }
+    #grid button.cell {
+      width: var(--cell);
+      height: var(--cell);
+      padding: 0;
+      border: 2px solid var(--border);
+      border-radius: 0;
+      background: var(--paper);
+      cursor: pointer;
+    }
+    #grid button.cell.on {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+    #grid button.cell:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+      z-index: 1;
+    }
+    .outputs h2 {
+      font-size: 0.95rem;
+      margin: 0 0 0.35rem;
+    }
+    .out-block {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .out-block:last-child { margin-bottom: 0; }
+    .out-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    pre.out {
+      margin: 0.35rem 0 0;
+      padding: 0.65rem 0.75rem;
+      background: #1e1e2e;
+      color: #e8e8f0;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+    }
+    button.copy {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+    button.copy:hover { background: #f0f1f5; }
+    .hint { font-size: 0.8rem; color: #666; margin-top: 0.75rem; }
+  </style>
+</head>
+<body>
+  <h1>8×8 font grid</h1>
+  <p class="sub">Left column = MSB (bit 7). Filled cell = 1. Drag to paint; click toggles.</p>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="toolbar">
+        <button type="button" class="tool" id="clearBtn">Clear</button>
+        <button type="button" class="tool" id="invertBtn">Invert</button>
+      </div>
+      <div id="grid" role="grid" aria-label="8 by 8 pixel grid"></div>
+      <p class="hint">MSB-left: single top-left pixel → <code>0b10000000</code> / <code>0x80</code>.</p>
+    </div>
+
+    <div class="panel outputs" style="flex: 1; min-width: min(100%, 320px); max-width: 520px;">
+      <div class="out-block">
+        <div class="out-head">
+          <h2>Binary</h2>
+          <button type="button" class="copy" data-copy="binary">Copy</button>
+        </div>
+        <pre class="out" id="outBinary" aria-live="polite"></pre>
+      </div>
+      <div class="out-block">
+        <div class="out-head">
+          <h2>Hex</h2>
+          <button type="button" class="copy" data-copy="hex">Copy</button>
+        </div>
+        <pre class="out" id="outHex" aria-live="polite"></pre>
+      </div>
+      <div class="out-block">
+        <div class="out-head">
+          <h2>C initializer</h2>
+          <button type="button" class="copy" data-copy="c">Copy C block</button>
+        </div>
+        <pre class="out" id="outC" aria-live="polite"></pre>
+      </div>
+    </div>
+  </div>
+
+  <textarea id="clipFallback" aria-hidden="true" style="position:fixed;left:-9999px;top:0;opacity:0;height:0"></textarea>
+
+  <script>
+(function () {
+  const SIZE = 8;
+  /** @type {boolean[][]} */
+  const cells = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+
+  const gridEl = document.getElementById("grid");
+  const outBinary = document.getElementById("outBinary");
+  const outHex = document.getElementById("outHex");
+  const outC = document.getElementById("outC");
+  const clipFallback = document.getElementById("clipFallback");
+
+  /** @type {HTMLButtonElement[][]} */
+  const buttons = [];
+
+  function rowByte(r) {
+    let b = 0;
+    for (let c = 0; c < SIZE; c++) {
+      if (cells[r][c]) b |= 1 << (7 - c);
+    }
+    return b;
+  }
+
+  function formatBinaryRow(r) {
+    const v = rowByte(r);
+    let s = "0b";
+    for (let bit = 7; bit >= 0; bit--) {
+      s += (v >> bit) & 1 ? "1" : "0";
+    }
+    return s;
+  }
+
+  function formatHexRow(r) {
+    return "0x" + rowByte(r).toString(16).toUpperCase().padStart(2, "0");
+  }
+
+  function refreshOutputs() {
+    const binLines = [];
+    const hexLines = [];
+    const cLines = [];
+    for (let r = 0; r < SIZE; r++) {
+      const comma = r < SIZE - 1 ? "," : "";
+      binLines.push(formatBinaryRow(r) + comma);
+      hexLines.push(formatHexRow(r) + comma);
+      cLines.push(formatHexRow(r) + comma);
+    }
+    outBinary.textContent = "[\n" + binLines.join("\n") + "\n]";
+    outHex.textContent = "[\n" + hexLines.join("\n") + "\n]";
+    outC.textContent = "{\n" + cLines.join("\n") + "\n}";
+  }
+
+  function syncButton(r, c) {
+    const btn = buttons[r][c];
+    btn.classList.toggle("on", cells[r][c]);
+    btn.setAttribute("aria-pressed", cells[r][c] ? "true" : "false");
+  }
+
+  function setCell(r, c, on) {
+    if (cells[r][c] === on) return;
+    cells[r][c] = on;
+    syncButton(r, c);
+    refreshOutputs();
+  }
+
+  function toggleCell(r, c) {
+    setCell(r, c, !cells[r][c]);
+  }
+
+  for (let r = 0; r < SIZE; r++) {
+    buttons[r] = [];
+    for (let c = 0; c < SIZE; c++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cell";
+      btn.setAttribute("role", "gridcell");
+      btn.setAttribute("aria-rowindex", String(r + 1));
+      btn.setAttribute("aria-colindex", String(c + 1));
+      btn.setAttribute("aria-pressed", "false");
+      btn.dataset.r = String(r);
+      btn.dataset.c = String(c);
+      gridEl.appendChild(btn);
+      buttons[r][c] = btn;
+    }
+  }
+
+  let painting = false;
+  let paintValue = false;
+
+  function parseRC(el) {
+    const r = parseInt(el.dataset.r, 10);
+    const c = parseInt(el.dataset.c, 10);
+    if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) return { r, c };
+    return null;
+  }
+
+  function paintAtClient(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!(el instanceof HTMLElement) || !el.classList.contains("cell")) return;
+    const rc = parseRC(el);
+    if (!rc) return;
+    setCell(rc.r, rc.c, paintValue);
+  }
+
+  gridEl.addEventListener("pointerdown", function (e) {
+    const t = e.target;
+    if (!(t instanceof HTMLElement) || !t.classList.contains("cell")) return;
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    e.preventDefault();
+    gridEl.setPointerCapture(e.pointerId);
+    const rc = parseRC(t);
+    if (!rc) return;
+    painting = true;
+    paintValue = !cells[rc.r][rc.c];
+    setCell(rc.r, rc.c, paintValue);
+  });
+
+  gridEl.addEventListener("pointermove", function (e) {
+    if (!painting) return;
+    paintAtClient(e.clientX, e.clientY);
+  });
+
+  function endPaint() {
+    painting = false;
+  }
+
+  gridEl.addEventListener("pointerup", endPaint);
+  gridEl.addEventListener("pointercancel", endPaint);
+  gridEl.addEventListener("lostpointercapture", endPaint);
+
+  gridEl.addEventListener("keydown", function (e) {
+    const t = e.target;
+    if (!(t instanceof HTMLElement) || !t.classList.contains("cell")) return;
+    if (e.key !== " " && e.key !== "Enter") return;
+    e.preventDefault();
+    const rc = parseRC(t);
+    if (!rc) return;
+    toggleCell(rc.r, rc.c);
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        cells[r][c] = false;
+        syncButton(r, c);
+      }
+    }
+    refreshOutputs();
+  });
+
+  document.getElementById("invertBtn").addEventListener("click", function () {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        cells[r][c] = !cells[r][c];
+        syncButton(r, c);
+      }
+    }
+    refreshOutputs();
+  });
+
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_) { /* fall through */ }
+    clipFallback.value = text;
+    clipFallback.select();
+    try {
+      document.execCommand("copy");
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const kind = btn.getAttribute("data-copy");
+      let text = "";
+      if (kind === "binary") text = outBinary.textContent;
+      else if (kind === "hex") text = outHex.textContent;
+      else if (kind === "c") text = outC.textContent;
+      copyText(text);
+    });
+  });
+
+  refreshOutputs();
+})();
+  </script>
+</body>
+</html>
