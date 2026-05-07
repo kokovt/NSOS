@@ -1,5 +1,27 @@
 #include <graphics/basic_graphics.h>
 
+#ifndef NSOS_DEFAULT_FONT_INDEX
+#define NSOS_DEFAULT_FONT_INDEX KERNEL_FONT_PIXEL_MPLUS
+#endif
+
+const font_info_t *const kernel_fonts[KERNEL_FONT_COUNT] = {
+    &font_basic,
+    &font_pixel_mplus,
+};
+
+static const font_info_t *active_font = kernel_fonts[NSOS_DEFAULT_FONT_INDEX];
+
+void set_active_font(const font_info_t *f) {
+    if (f) {
+        active_font = f;
+    }
+}
+
+void set_active_font_by_index(unsigned i) {
+    if (i < KERNEL_FONT_COUNT) {
+        active_font = kernel_fonts[i];
+    }
+}
 
 int createColor(int red, int green, int blue) {
     return ((red & 0xFF) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
@@ -76,29 +98,36 @@ void drawCircle(int x1, int y1, int radius, uint32_t color, int fill) {
 }
 
 void drawChar(unsigned char ch, int x, int y, uint32_t color) {
-    unsigned char *glyph = (unsigned char*)&font + (ch < FONT_NUMGLYPHS ? ch : 0) * FONT_BPG;
+    const font_info_t *f = active_font;
+    unsigned idx = ((unsigned)ch < f->num_glyphs) ? (unsigned)ch : 0u;
+    const unsigned char *glyph = f->glyphs + idx * f->bytes_per_glyph;
 
-    for(int i = 0; i < FONT_HEIGHT; i++) {
-        for (int j = 0; j < FONT_WIDTH; j++) {
-            unsigned char mask = 1 << j;
-            uint32_t col = (mask & *glyph) ? color : 0;
+    for (unsigned i = 0; i < f->height; i++) {
+        for (unsigned j = 0; j < f->width; j++) {
+            unsigned byte_idx = j >> 3;
+            unsigned bit = j & 7u;
+            unsigned shift = f->msb_left ? (7u - bit) : bit;
+            unsigned char mask = (unsigned char)(1u << shift);
+            unsigned char pix = glyph[byte_idx];
+            uint32_t col = (mask & pix) ? color : 0;
 
-            draw_pixel(x+j, y + i, col);
+            draw_pixel((int)(x + (int)j), (int)(y + (int)i), col);
         }
-        glyph += FONT_BPL;
+        glyph += f->bytes_per_line;
     }
 }
 
 void drawString(char *s, int x, int y, uint32_t color) {
-    while(*s) {
-        if(*s == '\r') {
+    const font_info_t *f = active_font;
+    while (*s) {
+        if (*s == '\r') {
             x = 0;
-        } else if(*s == '\n') {
-            x = 0; 
-            y += FONT_HEIGHT;
+        } else if (*s == '\n') {
+            x = 0;
+            y += (int)f->line_height;
         } else {
             drawChar(*s, x, y, color);
-            x+=FONT_WIDTH;
+            x += (int)f->advance_x;
         }
         s++;
     }

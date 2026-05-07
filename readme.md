@@ -5,11 +5,13 @@ This is a very early WIP operating system designed to be used on a plethora of R
 
 ## Features
 
-[Currently Broken] UART Outputting (Only tested on Qemu)
+UART Outputting (Only tested on Qemu)
 
 Creating a framebuffer
 
 Drawing to the screen (Circles, rectangles, a basic font, lines, and individual pixel placement)
+
+Creating fonts with bmpMaker, and changing the font. (I will automate adding fonts later on, you have to manually add it for now.)
 
 ## Supported boards
 
@@ -64,3 +66,6 @@ This is a list of architectures I plan on making it support; and a list of what 
 \* I don't have any x86 computers
 
 </details>
+
+
+This project is not affiliated with WSS playground or Microsoft.

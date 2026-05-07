@@ -4,3 +4,4 @@ kernel8.img
 cc/build*/
 cc/gcc*
 cc/bin*
+plan.md

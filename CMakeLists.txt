@@ -18,17 +18,17 @@ file(GLOB_RECURSE ASM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.S")
 
 # 2. Use the variable for the executable name
 add_executable(${KERNEL_NAME}.elf ${C_FILES} ${ASM_FILES})
-target_include_directories(${KERNEL_NAME}.elf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(${KERNEL_NAME}.elf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/kernel")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/ld/linker.ld")
+    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/linker.ld")
 else()
-    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/ld/linker-arm.ld")
+    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/linker-arm.ld")
 endif()
 target_link_options(${KERNEL_NAME}.elf PRIVATE 
     "-T" "${LINKER_SCRIPT}" 
     "-nostdlib" 
-    "-Wl,-I${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "-Wl,-I${CMAKE_CURRENT_SOURCE_DIR}/include/kernel"
     "-Wl,-Map=${KERNEL_NAME}.map"
 )
 
