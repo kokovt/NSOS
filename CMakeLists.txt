@@ -25,12 +25,14 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SIZEOF_VOID_P EQUAL 8)
 else()
     set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/src/linker-arm.ld")
 endif()
-target_link_options(${KERNEL_NAME}.elf PRIVATE 
-    "-T" "${LINKER_SCRIPT}" 
-    "-nostdlib" 
+target_link_options(${KERNEL_NAME}.elf PRIVATE
+    "-T" "${LINKER_SCRIPT}"
+    "-nostdlib"
     "-Wl,-I${CMAKE_CURRENT_SOURCE_DIR}/include/kernel"
     "-Wl,-Map=${KERNEL_NAME}.map"
 )
+# Link libgcc after objects (-nostdlib omits it); target_link_libraries ordering fixes __aeabi_* on ARM.
+target_link_libraries(${KERNEL_NAME}.elf PRIVATE gcc)
 
 # 3. Reference the target and variable in the post-build command
 add_custom_command(

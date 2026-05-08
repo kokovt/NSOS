@@ -1,37 +1,70 @@
 #include "peripherals/gpio.h"
 
-uint32_t get_GPFSEL1() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x04);
+enum {
+    Pull_None = 0,
+    Pull_Down = 2,
+    Pull_Up = 1
+};
+
+enum {
+    GPIO_MAX_PIN = 53,
+    GPIO_FUNCTION_OUT = 1, 
+    GPIO_FUNCTION_ALT5 = 2,
+    GPIO_FUNCTION_ALT3 = 7
+};
+
+unsigned int gpio_call(unsigned int pin_number, unsigned int value, unsigned int base, unsigned int field_size, unsigned int field_max) {
+    unsigned int field_mask = (1 << field_size) - 1;
+
+    if(pin_number > field_max) return 1;
+    if(value > field_mask) return 1;
+
+    unsigned int num_fields = 32 / field_size;
+    unsigned int reg = base + ((pin_number / num_fields) * 4);
+    unsigned int shift = ((pin_number % num_fields) * field_size);
+
+    unsigned int curval = mmio_read(reg);
+    curval &= ~(field_mask << shift);
+    curval |= (value << shift);
+    mmio_write(reg, curval);
+
+    return 1;
 }
 
-uint32_t get_GPFSEL4() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x10);
+unsigned int gpio_set(unsigned int pin_number, unsigned int value) {
+    return gpio_call(pin_number, value, GPFSET0, 1, GPIO_MAX_PIN);
 }
 
-uint32_t get_GPSET0() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x1C);
+unsigned int gpio_clear(unsigned int pin_number, unsigned int value) {
+    return gpio_call(pin_number, value, GPFCLR0, 1, GPIO_MAX_PIN);
 }
 
-uint32_t get_GPSET1() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x20);
+unsigned int gpio_pull(unsigned int pin_number, unsigned int value) {
+    return gpio_call(pin_number, value, GPPUPPDN0, 2, GPIO_MAX_PIN);
 }
 
-uint32_t get_GPCLR0() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x28);
+unsigned int gpio_function(unsigned int pin_number, unsigned int value) {
+    return gpio_call(pin_number, value, GPFSEL0, 3, GPIO_MAX_PIN);
 }
 
-uint32_t get_GPCLR1() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x2C);
+void gpio_useAsAlt3(unsigned int pin_number) {
+    gpio_pull(pin_number, Pull_None);
+    gpio_function(pin_number, GPIO_FUNCTION_ALT3);
 }
 
-uint32_t get_GPPUD() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x94);
+void gpio_useAsAlt5(unsigned int pin_number) {
+    gpio_pull(pin_number, Pull_None);
+    gpio_function(pin_number, GPIO_FUNCTION_ALT5);
 }
 
-uint32_t get_GPPUDCLK0() {
-    return (PBASE + GPIO_BASE_OFFSET + 0x98);
+void gpio_initOutputPinWithPullNone(unsigned int pin_number) {
+    gpio_pull(pin_number, Pull_None);
+    gpio_function(pin_number, GPIO_FUNCTION_OUT);
 }
 
-uint32_t get_GPPUPPDN0() {
-    return (PBASE + GPIO_BASE_OFFSET + 0xE4);
+void gpio_setPinOutputBool(unsigned int pin_number, unsigned int onOrOff) {
+    if(onOrOff) gpio_set(pin_number, 1);
+    else {
+        gpio_clear(pin_number, 1);
+    }
 }

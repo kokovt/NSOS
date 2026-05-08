@@ -5,7 +5,7 @@
 #include <mmio/mmio.h>
 #include <utils.h>
 
-#define MBOX_BASE 0xB880
+#define MBOX_BASE PBASE + 0xB880
 // #define MBOX_BASE 0xFE00B880
 #define MBOX_READ (MBOX_BASE + 0x00)
 #define MBOX_STATUS (MBOX_BASE + 0x18)

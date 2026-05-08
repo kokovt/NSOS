@@ -1,92 +1,93 @@
-#include "peripherals/UART0.h"
-#include "peripherals/gpio.h"
-#include "utils.h"
+// TODO Rewrite to use the mini-uart instead of the full UART
+//? The reason for this is that the full UART disables the bluetooth support.
+//? I would, in fact, like to have bluetooth in the future.
 
-int uart_initialized = 0;
+//? This heavily references
+//https://github.com/sypstraw/rpi4-osdev/blob/master/part4-miniuart/io.c ? Its a
+//cool reference, and you should check it out.
 
-void uart_send(char c) {
+#include <cutils.h>
+#include <graphics/basic_graphics.h>
+#include <uart.h>
 
-  if (!uart_initialized) {
-    return;
-  }
+unsigned char uart_output_queue[UART_MAX_QUEUE];
+unsigned int uart_output_queue_write = 0;
+unsigned int uart_output_queue_read = 0;
 
-  while (get32(get_UART0_FR()) & (1 << 5)) {
-  }
-  put32(get_UART0_DR(), c);
-}
-char uart_recv() {
-  if (!uart_initialized) {
-    return 0;
-  }
+void uart_init(unsigned int baud) {
 
-  while (get32(get_UART0_FR()) & (1 << 4)) {
-  }
-  return (get32(get_UART0_DR()) & 0xFF);
-}
-
-int uart_send_string(char *str) {
-  if (!uart_initialized) {
-    return 0;
-  }
-
-  for (int i = 0; str[i] != '\0'; i++) {
-    uart_send((char)str[i]);
-  }
-
-  return uart_initialized;
-}
-void uart_init() {
-  unsigned int selector;
-
-  selector = get32(get_GPFSEL1());
-  selector &= ~(7 << 12);
-  selector |= 4 << 12;
-  selector &= ~(7 << 15);
-  selector |= 4 << 15;
-  put32(get_GPFSEL1(), selector);
-
-  put32(get_GPPUD(), 0);
-  delay(150);
-  put32(get_GPPUDCLK0(), (1 << 14) | (1 << 15));
-  delay(150);
-  put32(get_GPPUDCLK0(), 0);
-  put32(get_UART0_CR(), 0);      // Disable UART during config
-  put32(get_UART0_ICR(), 0x7FF); // Clear pending interrupts
-  put32(get_UART0_IBRD(), 26);   // 115200 baud @ 48MHz clock
-  put32(get_UART0_FBRD(), 3);
-  put32(get_UART0_LCRH(),
-        (1 << 4) | (1 << 5) | (1 << 6)); // Enable FIFO + 8-bit words
-  put32(get_UART0_IMSC(), 0);            // Mask all interrupts
-  put32(get_UART0_CR(),
-        (1 << 0) | (1 << 8) | (1 << 9)); // Enable UART, RX, TX
-
-  uart_initialized = 1;
+  gpio_useAsAlt5(14);
+  gpio_useAsAlt5(15);
+  mmio_write(AUX_ENABLES, 1); // enable UART1
+  mmio_write(AUX_MU_IER_REG, 0);
+  mmio_write(AUX_MU_CNTL_REG, 0);
+  mmio_write(AUX_MU_LCR_REG, 3); // 8 bits
+  mmio_write(AUX_MU_MCR_REG, 0);
+  mmio_write(AUX_MU_IER_REG, 0);
+  mmio_write(AUX_MU_IIR_REG, 0xC6); // disable interrupts
+  mmio_write(AUX_MU_BAUD_REG, AUX_MU_BAUD(baud));
+  mmio_write(AUX_MU_CNTL_REG, 3); // enable RX/TX
 }
 
-void uart_send_int(int num) {
-  if (!uart_initialized) {
-    return;
+unsigned int uartIsOutputQueueEmpty() {
+  return (uart_output_queue_read == uart_output_queue_write);
+}
+
+unsigned int uart_isReadByteReady() { return mmio_read(AUX_MU_LSR_REG) & 0x01; }
+
+unsigned int uart_isWriteByteReady() {
+  return mmio_read(AUX_MU_LSR_REG) & 0x20;
+}
+
+unsigned char uart_readByte() {
+  while (!uart_isReadByteReady())
+    ;
+  return (unsigned char)mmio_read(AUX_MU_IO_REG);
+}
+
+void uart_writeByteBlockingActual(unsigned char ch) {
+  while (!uart_isWriteByteReady())
+    ;
+  mmio_write(AUX_MU_IO_REG, ch);
+}
+
+void uart_loadOutputFifo() {
+  while (!uartIsOutputQueueEmpty() && uart_isWriteByteReady()) {
+    uart_writeByteBlockingActual(uart_output_queue[uart_output_queue_read]);
+    uart_output_queue_read =
+        (uart_output_queue_read + 1) & (UART_MAX_QUEUE - 1);
+  }
+}
+
+void uart_writeByteBlocking(unsigned char ch) {
+  unsigned int next = (uart_output_queue_write + 1) & (UART_MAX_QUEUE - 1);
+
+  while (next == uart_output_queue_read)
+    uart_loadOutputFifo();
+
+  uart_output_queue[uart_output_queue_write] = ch;
+  uart_output_queue_write = next;
+}
+
+void uart_writeText(char *buffer) {
+  while (*buffer) {
+    if (*buffer == '\n')
+      uart_writeByteBlocking('\r');
+    uart_writeByteBlocking(*buffer++);
+  }
+}
+
+void uart_drainOutputQueue() {
+  while (!uartIsOutputQueueEmpty())
+    uart_loadOutputFifo();
+}
+
+void uart_update() {
+  if (!uartIsOutputQueueEmpty() && uart_isWriteByteReady()) {
+    uart_loadOutputFifo();
   }
 
-  char buf[12];
-  int i = 0;
-
-  if (num == 0) {
-    uart_send('0');
-    return;
-  }
-
-  if (num < 0) {
-    uart_send('-');
-    num = -num;
-  }
-
-  while (num > 0) {
-    buf[i++] = (num % 10) + '0';
-    num /= 10;
-  }
-
-  while (i > 0) {
-    uart_send(buf[--i]);
+  if (uart_isReadByteReady()) {
+    drawChar(uart_readByte(), 500, 500, 0xFFFFFF);
   }
 }

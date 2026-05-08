@@ -5,7 +5,7 @@ This is a very early WIP operating system designed to be used on a plethora of R
 
 ## Features
 
-UART Outputting (Only tested on Qemu)
+UART Outputting (Only works on Hardware - Uses Mini UART - Qemu only supports Serial if you use the full PL011)
 
 Creating a framebuffer
 
@@ -50,7 +50,7 @@ Over time, I will try to Reduce the number of boards that are supported
 
 This is a list of architectures I plan on making it support; and a list of what is supports 
 
-* AARCH64 (RISCV) [ARM64] 
+* AARCH64 (RISCV) [ARM64]
 * ARM32   (RISCV)
 * x86-64  (CISC)
 * x86     (CISC)
