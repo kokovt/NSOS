@@ -1,5 +1,4 @@
-#ifndef	_P_GPIO_H
-#define	_P_GPIO_H
+#pragma once
 
 #include <stdint.h>
 #include <mmio/mmio.h>
@@ -22,4 +21,3 @@ void gpio_useAsAlt5(unsigned int pin_number);
 
 void gpio_initOutputPinWithPullNone(unsigned int pin_number);
 void gpio_setPinOutputBool(unsigned int pin_number, unsigned int onOrOff);
-#endif  /*_P_GPIO_H */

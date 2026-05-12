@@ -1,5 +1,4 @@
-#ifndef BASIC_GRAPHICS_H
-#define BASIC_GRAPHICS_H
+#pragma once
 
 #include <graphics/init_framebuffer.h>
 #include <stdint.h>
@@ -24,5 +23,3 @@ void drawString(char *s, int x, int y, uint32_t color);
 
 void set_active_font(const font_info_t *f);
 void set_active_font_by_index(unsigned i);
-
-#endif

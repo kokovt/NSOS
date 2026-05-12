@@ -1,5 +1,4 @@
-#ifndef _INIT_FRAMEBUFFER_H
-#define _INIT_FRAMEBUFFER_H
+#pragma once
 
 #include <stdint.h>
 #define PBASE_PI4 0xFE000000u
@@ -21,4 +20,3 @@ typedef struct {
 int init_framebuffer(void);
 void draw_pixel(int x, int y, int color);
 ScreenSize get_monitor_resolution(void);
-#endif /* _INIT_FRAMEBUFFER_H */

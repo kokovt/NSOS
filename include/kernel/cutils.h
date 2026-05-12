@@ -1,8 +1,5 @@
-#ifndef CUTILS_H 
-#define CUTILS_H
+#pragma once
 
 #include <stdint.h>
 
 void itoa(int n, char *s);
-
-#endif // CUTILS_H

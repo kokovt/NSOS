@@ -82,12 +82,13 @@ void uart_drainOutputQueue() {
     uart_loadOutputFifo();
 }
 
+
+//? Keypress format:
+//? K,[KeyID],[1 for Down / 0 for Up]
+//? Mouse format:
+//? M,[Left Button],[Right button],[X movement],[Y movement]
 void uart_update() {
   if (!uartIsOutputQueueEmpty() && uart_isWriteByteReady()) {
     uart_loadOutputFifo();
-  }
-
-  if (uart_isReadByteReady()) {
-    drawChar(uart_readByte(), 500, 500, 0xFFFFFF);
   }
 }

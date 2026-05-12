@@ -1,5 +1,4 @@
-#ifndef _UART_H
-#define _UART_H
+#pragma once
 
 #include <stdint.h>
 #include <mmio/mmio.h>
@@ -44,5 +43,3 @@ void uart_writeText(char *buffer);
 void uart_drainOutputQueue();
 void uart_update();
 
-
-#endif /*_UART_H */

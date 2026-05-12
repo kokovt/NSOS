@@ -30,5 +30,16 @@ void kernel_main(void) {
   uart_writeText("Testing the UART output!");
   while (1) {
     uart_update();
+    //? Check for input
+    if(uart_isReadByteReady()) {
+      char ch = uart_readByte();
+      if(ch == 'K') {
+        uart_readByte(); // Ignore the comma.
+        char next_char = uart_readByte();
+        if(!uart_isReadByteReady()) {
+          drawChar(next_char, 500, 500, 0xFFFFFF);
+        }
+      }
+    }
   }
 }

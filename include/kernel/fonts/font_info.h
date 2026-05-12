@@ -1,5 +1,4 @@
-#ifndef FONT_INFO_H
-#define FONT_INFO_H
+#pragma once
 
 typedef struct font_info {
     unsigned width;
@@ -12,5 +11,3 @@ typedef struct font_info {
     unsigned msb_left;
     const unsigned char *glyphs;
 } font_info_t;
-
-#endif
