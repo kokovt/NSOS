@@ -50,19 +50,13 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   file(GLOB_RECURSE C_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
   file(GLOB_RECURSE ASM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.S")
 
-  add_executable(kernel.elf ${C_FILES} ${ASM_FILES})
-  target_include_directories(kernel.elf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/kernel")
+  add_executable(NSOS.elf ${C_FILES} ${ASM_FILES})
+  target_include_directories(NSOS.elf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include/kernel")
 
-  target_link_options(kernel.elf PRIVATE 
+  target_link_options(NSOS.elf PRIVATE 
     "-T" "${CMAKE_CURRENT_SOURCE_DIR}/src/linker-x86_64.ld"
     "-nostdlib"
     "-Wl,-I${CMAKE_CURRENT_SOURCE_DIR}/include/kernel"
-    "-Wl,-Map=kernel.elf.map")
+    "-Wl,-Map=NSOS.elf.map")
 
-  add_custom_command(
-    TARGET kernel.elf POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} $<TARGET_FILE:kernel.elf> -O binary NSOS.bin
-    COMMENT "Generating NSOS.bin from kernel.elf"
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  )
 endif()

@@ -49,12 +49,13 @@ cleanbuild:
 	cd ./build-x86_64/limine-binary/ && make
 	cp -v ./src/limine.conf ./build-x86_64/limine-binary/limine-bios.sys ./build-x86_64/limine-binary/limine-bios-cd.bin ./build-x86_64/limine-binary/limine-uefi-cd.bin ./build-x86_64/iso_root/boot/limine
 	cp -v ./build-x86_64/limine-binary/BOOTX64.EFI ./build-x86_64/limine-binary/BOOTIA32.EFI ./build-x86_64/iso_root/EFI/BOOT/
-	cp -v ./build-x86_64/NSOS.bin ./build-x86_64/iso_root/boot/
+	cp -v ./build-x86_64/NSOS.elf ./build-x86_64/iso_root/boot/
 	xorriso -as mkisofs -R -r -J -b /boot/limine/limine-bios-cd.bin \
         -no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \
         -apm-block-size 2048 --efi-boot /boot/limine/limine-uefi-cd.bin \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
-        build-x86_64/iso_root/ -o image.iso
+        build-x86_64/iso_root/ -o ./build-x86_64/NSOS.iso
+	./build-x86_64/limine-binary/limine bios-install ./build-x86_64/NSOS.iso
 
 
 test-aarch64: cleanbuild
@@ -63,6 +64,8 @@ test-aarch64: cleanbuild
 test-arm: cleanbuild
 	qemu-system-arm -M raspi0 -m 512 -kernel "$(BUILD_ARM)/kernel7.elf" -serial stdio
 
+test-x86_64: cleanbuild
+	qemu-system-x86_64 ./build-x86_64/NSOS.iso
 install: cleanbuild
 ifdef DEST
 	@mkdir -p "$(DEST)"
