@@ -3,6 +3,8 @@
 This is a very early WIP operating system designed to be used on a plethora of Raspberry PI boards.
 
 
+Current goal: Add x86-64 support
+
 ## Features
 
 UART Outputting (Only works on Hardware - Uses Mini UART - Qemu only supports Serial if you use the full PL011)

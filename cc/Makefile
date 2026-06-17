@@ -8,12 +8,13 @@ help:
 	@echo "Usage: make <target>"
 	@echo "Note: This script only works on Linux. It will not work on MacOS or Windows."
 	@echo "This script requires the binutils-2.46.0.tar.xz and gcc-15.2.0.tar.xz files to be in the current directory."
+	@echo "Make sure to have gcc-15 downloaded, and to run CC=gcc-15 and CXX=g++-15 before running this script."
 	@echo "https://ftp.gnu.org/gnu/binutils/binutils-2.46.0.tar.xz"
 	@echo "https://ftp.gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz"
 	@echo ""
 	@echo "Targets:"
 	@echo "build-aarch64: Builds the toolchain for Arm 64-Bit (For RPI4, RPI3)"
-
+	@echo "build-arm-none-eabi: Builds the toolchain for Arm 32-Bit (For RPI0, RPI1, RPI2, RPI3)"
 
 define BUILD_TOOLCHAIN
 	@echo "Cleaning up old build files for $(1)"
@@ -64,3 +65,6 @@ build-aarch64: binutils-2.46.0.tar.xz gcc-15.2.0.tar.xz
 
 build-arm-none-eabi: binutils-2.46.0.tar.xz gcc-15.2.0.tar.xz
 	$(call BUILD_TOOLCHAIN,arm-none-eabi)
+
+build-x86_64-elf: binutils-2.46.0.tar.xz gcc-15.2.0.tar.xz 
+	$(call BUILD_TOOLCHAIN,x86_64-elf)
