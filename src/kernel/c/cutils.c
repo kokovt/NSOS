@@ -1,3 +1,4 @@
+#ifndef _USE_LIMINE_
 #include <cutils.h>
 
 void itoa(int n, char *s) {
@@ -24,4 +25,5 @@ void itoa(int n, char *s) {
   }
 }
 
-char* htoa(uint32_t n) {}
+char *htoa(uint32_t n) {}
+#endif

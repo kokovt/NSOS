@@ -1,10 +1,11 @@
+#ifndef _USE_LIMINE_
 // TODO Rewrite to use the mini-uart instead of the full UART
 //? The reason for this is that the full UART disables the bluetooth support.
 //? I would, in fact, like to have bluetooth in the future.
 
 //? This heavily references
-//https://github.com/sypstraw/rpi4-osdev/blob/master/part4-miniuart/io.c ? Its a
-//cool reference, and you should check it out.
+// https://github.com/sypstraw/rpi4-osdev/blob/master/part4-miniuart/io.c ? Its
+// a cool reference, and you should check it out.
 
 #include <cutils.h>
 #include <graphics/basic_graphics.h>
@@ -82,7 +83,6 @@ void uart_drainOutputQueue() {
     uart_loadOutputFifo();
 }
 
-
 //? Keypress format:
 //? K,[KeyID],[1 for Down / 0 for Up]
 //? Mouse format:
@@ -92,3 +92,4 @@ void uart_update() {
     uart_loadOutputFifo();
   }
 }
+#endif

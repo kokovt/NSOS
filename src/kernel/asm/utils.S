@@ -32,6 +32,9 @@ delay:
     bne delay
     bx lr
 
+#elif defined(_USE_LIMINE_)
 #else
-    #error "Unsupported archetecture"
+	#error "Unsupported Architecture"
+
 #endif
+

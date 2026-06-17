@@ -1,3 +1,4 @@
+#ifndef _USE_LIMINE_
 #include "peripherals/base.h"
 
 uint32_t get_PBASE(void) {
@@ -11,9 +12,11 @@ uint32_t get_PBASE(void) {
   uint32_t reg;
   asm volatile("mrc p15,0,%0,c0,c0,0" : "=r"(reg));
   part = (reg >> 4) & 0xFFF;
+#elif defined(_USE_LIMINE_)
 #else
 #error Unsupported architecture for get_PBASE
 #endif
+#ifndef _USE_LIMINE_
   switch (part) {
   case 0xB76:
     return 0x20000000; // ARM1176 (Pi 0/1)
@@ -26,4 +29,6 @@ uint32_t get_PBASE(void) {
   default:
     return 0x20000000;
   }
+#endif
 }
+#endif

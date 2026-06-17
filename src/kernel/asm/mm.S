@@ -24,7 +24,8 @@ memzero_loop:
 	bgt memzero_loop    // If r1 > 0,z loop again
 	bx lr               // Return to caller
 
+#elif defined(_USE_LIMINE_)
+#else
+	#error "Unsupported Architecture"
 
-#else 
-	#error "Invalid Archetecture"
 #endif

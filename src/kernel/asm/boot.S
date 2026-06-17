@@ -73,8 +73,8 @@ master:
 .align 2
 ptr_bss_begin: .word bss_begin
 ptr_bss_end:   .word bss_end
+#elif defined(_USE_LIMINE_)
 #else
-
 	#error "Unsupported Architecture"
 
 #endif
