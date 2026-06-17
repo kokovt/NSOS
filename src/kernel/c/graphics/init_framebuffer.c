@@ -1,9 +1,10 @@
-#ifndef _USE_LIMINE_
 #include <graphics/init_framebuffer.h>
+
+#ifndef _USE_LIMINE_
 
 volatile unsigned int __attribute__((aligned(16))) fb_mailbox[36];
 
-uint32_t *fb_pointer;
+volatile uint32_t *fb_pointer;
 uint32_t fb_width, fb_height, fb_pitch;
 
 unsigned int isrgb;
@@ -107,5 +108,45 @@ int init_framebuffer() {
 void draw_pixel(int x, int y, int color) {
   int offs = (y * fb_pitch) + (x * 4);
   *((unsigned int *)(fb + offs)) = color;
+}
+#else
+
+__attribute__((
+    used,
+    section(
+        ".limine_requests"))) static volatile struct limine_framebuffer_request
+    framebuffer_request = {.id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0};
+
+struct limine_framebuffer *framebuffer;
+volatile uint32_t *fbpointer;
+uint32_t fb_width, fb_height, fb_pitch;
+
+int init_framebuffer() {
+  if (framebuffer_request.response == NULL ||
+      framebuffer_request.response->framebuffer_count < 1) {
+    return -1;
+  }
+  framebuffer = framebuffer_request.response->framebuffers[0];
+
+  fbpointer = framebuffer->address;
+
+  fb_width = framebuffer->width;
+  fb_height = framebuffer->height;
+  fb_pitch = framebuffer->pitch;
+
+  return 0;
+}
+
+void draw_pixel(int x, int y, int color) {
+  fbpointer[y * (framebuffer->pitch / 4) + x] = color;
+}
+
+ScreenSize get_monitor_resolution(void) {
+  ScreenSize size;
+
+  size.width = framebuffer->width;
+  size.height = framebuffer->height;
+
+  return size;
 }
 #endif

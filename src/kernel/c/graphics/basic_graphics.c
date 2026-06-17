@@ -1,4 +1,3 @@
-#ifndef _USE_LIMINE_
 #include <graphics/basic_graphics.h>
 
 #ifndef NSOS_DEFAULT_FONT_INDEX
@@ -135,4 +134,3 @@ void drawString(char *s, int x, int y, uint32_t color) {
     s++;
   }
 }
-#endif

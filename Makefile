@@ -28,11 +28,9 @@ help:
 	@echo "install: Runs cleanbuild then copies kernel8.img, kernel7.img, and kernel.img to a directory"
 	@echo "         Usage: make install DEST=/path/to/dir   (or just 'make install' to be prompted)"
 
-setuplimine:
-	curl -L https://github.com/Limine-Bootloader/Limine/releases/latest/download/limine-binary.tar.gz | gunzip | tar -xf -
-	make -C limine-binary
 
-cleanbuild:
+# Probably should update this to build the individual targets again - just because I dont want to wait for aarch and arm to build when testing x86_64
+cleanbuild: setuplimine
 	rm -rf "$(BUILD_AARCH64)" "$(BUILD_ARM)" "${BUILD-X86_64}"
 	cmake -S "$(ROOT)" -B "$(BUILD_AARCH64)" -DCMAKE_TOOLCHAIN_FILE="$(aarch64-toolchain)"
 	cmake --build "$(BUILD_AARCH64)" -j$(or $(JOBS),$(NPROC)) $(BUILD_VERBOSE)
@@ -43,20 +41,18 @@ cleanbuild:
 	cmake --build "$(BUILD-X86_64)" -j$(or $(JOBS),$(NPROC)) $(BUILD_VERBOSE)
 	mkdir -p ./build-x86_64/iso_root/boot/limine/
 	mkdir -p ./build-x86_64/iso_root/EFI/BOOT/
-	curl -o ./build-x86_64/limine-binary.tar.gz -L https://github.com/Limine-Bootloader/Limine/releases/latest/download/limine-binary.tar.gz
-	mkdir ./build-x86_64/limine-binary
-	tar -xf ./build-x86_64/limine-binary.tar.gz -C ./build-x86_64/limine-binary --strip-components=1
-	cd ./build-x86_64/limine-binary/ && make
-	cp -v ./src/limine.conf ./build-x86_64/limine-binary/limine-bios.sys ./build-x86_64/limine-binary/limine-bios-cd.bin ./build-x86_64/limine-binary/limine-uefi-cd.bin ./build-x86_64/iso_root/boot/limine
-	cp -v ./build-x86_64/limine-binary/BOOTX64.EFI ./build-x86_64/limine-binary/BOOTIA32.EFI ./build-x86_64/iso_root/EFI/BOOT/
+	cp -v ./src/limine.conf ./limine-binary/limine-bios.sys ./limine-binary/limine-bios-cd.bin ./limine-binary/limine-uefi-cd.bin ./build-x86_64/iso_root/boot/limine
+	cp -v ./limine-binary/BOOTX64.EFI ./limine-binary/BOOTIA32.EFI ./build-x86_64/iso_root/EFI/BOOT/
 	cp -v ./build-x86_64/NSOS.elf ./build-x86_64/iso_root/boot/
 	xorriso -as mkisofs -R -r -J -b /boot/limine/limine-bios-cd.bin \
         -no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \
         -apm-block-size 2048 --efi-boot /boot/limine/limine-uefi-cd.bin \
         -efi-boot-part --efi-boot-image --protective-msdos-label \
         build-x86_64/iso_root/ -o ./build-x86_64/NSOS.iso
-	./build-x86_64/limine-binary/limine bios-install ./build-x86_64/NSOS.iso
+	./limine-binary/limine bios-install ./build-x86_64/NSOS.iso
 
+setuplimine:
+	if [ ! -d ./limine-binary/ ]; then curl -L https://github.com/Limine-Bootloader/Limine/releases/latest/download/limine-binary.tar.gz | gunzip | tar -xf - ; make -C limine-binary; fi
 
 test-aarch64: cleanbuild
 	qemu-system-aarch64 -M raspi4b -serial stdio -kernel "$(BUILD_AARCH64)/kernel8.img"
